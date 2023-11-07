@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ArrowLeft, Settings } from "react-feather";
 
 const AttendanceComponent = () => {
   const router = useRouter();
@@ -11,12 +12,12 @@ const AttendanceComponent = () => {
     <div className="container mx-auto min-h-[80dvh] w-screen flex flex-col">
       <div className=" z-50 mx-5 my-5 flex justify-between">
         <button
-          className="bg-purple-600 rounded-full px-4 py-2 text-xs text-white"
+          className="bg-purple-600 rounded-full px-4 py-2 text-white inline-flex items-center"
           onClick={() => router.push("/")}>
-          {"< "} Scan
+          <ArrowLeft />
         </button>
-        <button className="bg-purple-600 rounded-full px-4 py-2 text-xs text-white">
-          Settings
+        <button className="bg-purple-600 rounded-full px-4 py-2 text-white">
+          <Settings />
         </button>
       </div>
       <div className="px-5 w-full flex flex-col space-y-8">

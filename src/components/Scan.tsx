@@ -3,6 +3,54 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { QrScanner } from "@yudiel/react-qr-scanner";
+import { Type, Grid, Sunrise, Sunset, Hash } from "react-feather";
+
+interface SimpleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  idNumber: string;
+  handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  setIdNumber: React.Dispatch<React.SetStateAction<string>>;
+}
+
+const SimpleModal: React.FC<SimpleModalProps> = ({
+  isOpen,
+  onClose,
+  idNumber,
+  handleInputChange,
+  setIdNumber,
+}) => {
+  return (
+    <div
+      className={`fixed inset-0 flex items-center justify-center z-[100] transition-opacity container mx-auto px-3 ${
+        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      }`}>
+      <div className="bg-white p-4 shadow-md rounded-lg flex flex-col z-[110] gap-3">
+        <input
+          type="text"
+          placeholder="000-00000"
+          className="w-full p-2 border rounded-md text-6xl text-center"
+          value={idNumber}
+          onChange={handleInputChange}
+          // onKeyDown={handleEnterKey}
+        />
+
+        <div className="w-full flex justify-end space-x-3 text-lg">
+          <button
+            onClick={onClose}
+            className="w-full p-2 bg-purple-600 text-white rounded-md">
+            Send
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full p-2 bg-red-600 text-white rounded-md">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Scan = () => {
   const router = useRouter();
@@ -12,6 +60,33 @@ const Scan = () => {
   const [isQRCodeDetected, setIsQRCodeDetected] = useState(false);
   const [displayScanResult, setDisplayScanResult] = useState(false);
   const [isTimeIn, setIsTimeIn] = useState(true);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [idNumber, setIdNumber] = useState("");
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = event.target.value;
+    const numericValue = inputValue.replace(/[^0-9]/g, "");
+
+    if (numericValue.length <= 8) {
+      let formattedValue = numericValue;
+
+      if (numericValue.length > 3) {
+        formattedValue = `${numericValue.slice(0, 3)}-${numericValue.slice(3)}`;
+      }
+
+      setIdNumber(formattedValue);
+    }
+  };
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIdNumber("");
+  };
 
   const handleScanResult = (data: string) => {
     if (data) {
@@ -87,7 +162,7 @@ const Scan = () => {
 
   return (
     <div className="container mx-auto">
-      <div className="flex justify-center items-center h-[100vh]">
+      <div className="flex justify-center items-center h-[100vh] select-none">
         <QrScanner
           viewFinder={(props) => (
             <div className="flex flex-col items-center justify-center absolute w-[100%] h-[100%] top-0 left-0">
@@ -120,36 +195,46 @@ const Scan = () => {
                 />
               </svg>
               <div className=" z-50 absolute top-5 w-full px-3 flex justify-between">
-                <div className=" z-50 text-white self-center space-x-2">
+                <div className=" z-50 text-white self-center space-x-2 flex">
                   <button
                     className={`${
                       isTimeIn ? "bg-purple-600" : "bg-purple-200"
                     } rounded-full px-2 py-1`}
                     onClick={() => handleAttendanceOptionChange(true)}>
-                    Time-in
+                    <Sunrise />
                   </button>
                   <button
                     className={`${
                       !isTimeIn ? "bg-purple-600" : "bg-purple-200"
                     } rounded-full px-2 py-1`}
                     onClick={() => handleAttendanceOptionChange(false)}>
-                    Time-out
+                    <Sunset />
                   </button>
                 </div>
-                <button
-                  className="bg-purple-600 text-white rounded-full px-4 py-2 text-xs"
-                  onClick={() => router.push("/attendance")}>
-                  Menu
-                </button>
+                <div className="space-x-2">
+                  <button
+                    className=" bg-purple-600 text-white rounded-full px-4 py-2"
+                    onClick={openModal}>
+                    <Hash />
+                  </button>
+                  <button
+                    className="bg-purple-600 text-white rounded-full px-4 py-2 text-xs"
+                    onClick={() => router.push("/attendance")}>
+                    <Grid />
+                  </button>
+                </div>
               </div>
               {displayScanResult && (
-                <div className=" z-50 absolute bottom-5 text-center text-white shadow-xl">
+                <div className=" z-50 absolute bottom-16 text-center text-white shadow-xl space-y-5">
                   <p className="text-xs">
                     <span className="text-sm">{result}</span> <br />
                     Attendance Checked!
                   </p>
                 </div>
               )}
+              <p className="z-50 absolute bottom-3 bg-purple-600 rounded-full px-2 py-1 text-xs">
+                Created by <span className=" font-bold">Shaun Niel Ochavo</span>
+              </p>
             </div>
           )}
           scanDelay={1000}
@@ -166,6 +251,13 @@ const Scan = () => {
           }}
         />
       </div>
+      <SimpleModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        idNumber={idNumber}
+        handleInputChange={handleInputChange}
+        setIdNumber={setIdNumber}
+      />
     </div>
   );
 };
