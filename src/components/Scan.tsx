@@ -237,13 +237,13 @@ const Scan = () => {
 
   return (
     <div className="container mx-auto">
-      <div className="flex justify-center items-center h-[100vh] select-none">
+      <div className="flex justify-center items-center h-[100svh] select-none">
         <QrScanner
           viewFinder={(props) => (
-            <div className="flex flex-col items-center justify-center absolute w-[100%] h-[100%] top-0 left-0">
+            <div className="flex flex-col items-center justify-center absolute w-[100%] h-[100%] top-0 left-0 z-10">
               <svg
                 viewBox="0 0 100 100"
-                className=" z-[100] w-24 h-24 transform scale-[3]  md:scale-[7]">
+                className="z-20 w-24 h-24 transform scale-[3]  md:scale-[7]">
                 <path
                   fill="none"
                   d="M23,0 L0,0 L0,23"
@@ -269,7 +269,7 @@ const Scan = () => {
                   strokeWidth="5"
                 />
               </svg>
-              <div className=" z-50 absolute top-5 w-full px-3 flex justify-between">
+              <div className=" z-30 absolute top-5 w-full px-3 flex justify-between">
                 <div className=" z-50 text-white self-center space-x-2 flex">
                   <button
                     className={`${
