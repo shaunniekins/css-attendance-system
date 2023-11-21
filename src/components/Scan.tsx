@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { QrScanner } from "@yudiel/react-qr-scanner";
 import { Type, Grid, Sunrise, Sunset, Hash } from "react-feather";
+import {
+  checkAttendanceTimeInListData,
+  checkAttendanceTimeOutListData,
+  insertAttendanceListData,
+  updateAttendanceListData,
+} from "@/api/attendance_list_data";
 
 interface SimpleModalProps {
   isOpen: boolean;
@@ -11,6 +17,7 @@ interface SimpleModalProps {
   idNumber: string;
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setIdNumber: React.Dispatch<React.SetStateAction<string>>;
+  handleScanResult: (idNumber: string) => void;
 }
 
 const SimpleModal: React.FC<SimpleModalProps> = ({
@@ -19,7 +26,13 @@ const SimpleModal: React.FC<SimpleModalProps> = ({
   idNumber,
   handleInputChange,
   setIdNumber,
+  handleScanResult,
 }) => {
+  const handleSend = () => {
+    handleScanResult(idNumber);
+    onClose();
+  };
+
   return (
     <div
       className={`fixed inset-0 flex items-center justify-center z-[100] transition-opacity container mx-auto px-3 ${
@@ -37,7 +50,7 @@ const SimpleModal: React.FC<SimpleModalProps> = ({
 
         <div className="w-full flex justify-end space-x-3 text-lg">
           <button
-            onClick={onClose}
+            onClick={handleSend}
             className="w-full p-2 bg-purple-600 text-white rounded-md">
             Send
           </button>
@@ -64,6 +77,8 @@ const Scan = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [idNumber, setIdNumber] = useState("");
 
+  const [messagePrompt, setMessagePrompt] = useState("");
+
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
     const numericValue = inputValue.replace(/[^0-9]/g, "");
@@ -88,50 +103,110 @@ const Scan = () => {
     setIdNumber("");
   };
 
-  const handleScanResult = (data: string) => {
-    if (data) {
-      const audio = new Audio("scanner-beep.mp3");
-      audio.play();
+  const getLocalDateTimeAndDate = () => {
+    const now = new Date();
+    const timezoneOffsetInHours = now.getTimezoneOffset() / 60;
+    now.setHours(now.getHours() - timezoneOffsetInHours);
+    const localDateTime = now.toISOString().slice(0, 19).replace("T", " ");
+    const localDate = now.toISOString().slice(0, 10);
+    return { localDateTime, localDate };
+  };
 
-      const time_in_datetime = "2023-11-06 04:05:06";
-      const time_out_datetime = "2023-11-06 04:05:06";
+  const handleScanResult = async (idNumber: string) => {
+    if (!idNumber) return;
 
-      setResult(data);
-      setIsQRCodeDetected(true);
-      setDisplayScanResult(true);
+    const { localDateTime, localDate } = getLocalDateTimeAndDate();
 
-      // Check if 'attendance_data' exists in localStorage
-      const existingData = localStorage.getItem("attendance_data");
-      if (existingData) {
-        // If it exists, parse the data, append the new data, and update the localStorage
-        const parsedData = JSON.parse(existingData);
-        parsedData.push({ data, time_in_datetime, time_out_datetime });
-        localStorage.setItem("attendance_data", JSON.stringify(parsedData));
+    const audio = new Audio("scanner-beep.mp3");
+    audio.play();
+
+    setResult(idNumber);
+    setIsQRCodeDetected(true);
+
+    const { data: existingTimeInData } = await checkAttendanceTimeInListData(
+      idNumber,
+      localDate
+    );
+
+    const { data: existingTimeOutData } = await checkAttendanceTimeOutListData(
+      idNumber,
+      localDate
+    );
+
+    if (isTimeIn) {
+      if (existingTimeInData.length > 0) {
+        setMessagePrompt("Already Timed-In!");
+        // console.log(idNumber, "already checked in!");
       } else {
-        // If it doesn't exist, create a new localStorage item with an array containing the data
-        const initialData = [{ data, time_in_datetime, time_out_datetime }];
-        localStorage.setItem("attendance_data", JSON.stringify(initialData));
+        const newAttendanceData = [
+          {
+            id_number: idNumber,
+            time_in: localDateTime,
+            time_out: null,
+          },
+        ];
+
+        await insertAttendanceListData(newAttendanceData);
+        setMessagePrompt("Successfully Time-In!");
       }
-      console.log(
-        "Data stored in localStorage:",
-        data,
-        time_in_datetime,
-        time_out_datetime
-      );
+    } else {
+      if (existingTimeOutData.length > 0) {
+        setMessagePrompt("Already Timed-Out!");
+        // console.log(idNumber, "already checked out!");
+      } else if (
+        existingTimeInData.length > 0 &&
+        existingTimeOutData.length === 0
+      ) {
+        const updateAttendanceData = [
+          {
+            time_out: localDateTime,
+          },
+        ];
+
+        await updateAttendanceListData(
+          idNumber,
+          localDate,
+          updateAttendanceData
+        );
+        setMessagePrompt("Successfully Time-Out!");
+      } else {
+        setMessagePrompt("Not yet timed-in!");
+      }
     }
+    setDisplayScanResult(true);
+
+    // // Check if 'attendance_data' exists in localStorage
+    // const existingData = localStorage.getItem("attendance_data");
+    // console.log("existingData", existingData);
+    // if (existingData) {
+    //   // If it exists, parse the data, append the new data, and update the localStorage
+    //   const parsedData = JSON.parse(existingData);
+    //   parsedData.push({ data, time_in_datetime, time_out_datetime });
+    //   localStorage.setItem("attendance_data", JSON.stringify(parsedData));
+    // } else {
+    //   // If it doesn't exist, create a new localStorage item with an array containing the data
+    //   const initialData = [{ data, time_in_datetime, time_out_datetime }];
+    //   localStorage.setItem("attendance_data", JSON.stringify(initialData));
+    // }
+    // console.log(
+    //   "Data stored in localStorage:",
+    //   data,
+    //   time_in_datetime,
+    //   time_out_datetime
+    // );
   };
 
   useEffect(() => {
     const storedAttendanceOption = localStorage.getItem("attendanceOption");
 
-    console.log("storedAttendanceOption1 ", storedAttendanceOption);
+    // console.log("storedAttendanceOption1 ", storedAttendanceOption);
     setIsTimeIn(
       storedAttendanceOption ? storedAttendanceOption === "true" : true
     );
   }, []);
 
   const handleAttendanceOptionChange = (value: boolean) => {
-    console.log("truth value: ", value);
+    // console.log("truth value: ", value);
     setIsTimeIn(value);
     localStorage.setItem("attendanceOption", JSON.stringify(value));
   };
@@ -152,7 +227,7 @@ const Scan = () => {
     if (displayScanResult) {
       let timer = setTimeout(() => {
         setDisplayScanResult(false);
-      }, 1000);
+      }, 3500);
 
       return () => {
         clearTimeout(timer);
@@ -228,7 +303,7 @@ const Scan = () => {
                 <div className=" z-50 absolute bottom-16 text-center text-white shadow-xl space-y-5">
                   <p className="text-xs">
                     <span className="text-sm">{result}</span> <br />
-                    Attendance Checked!
+                    {messagePrompt}
                   </p>
                 </div>
               )}
@@ -257,6 +332,7 @@ const Scan = () => {
         idNumber={idNumber}
         handleInputChange={handleInputChange}
         setIdNumber={setIdNumber}
+        handleScanResult={handleScanResult}
       />
     </div>
   );
