@@ -47,8 +47,33 @@ export const handleExportCSV = () => {
 
     dataVal.forEach((item: any) => {
       const id_num = item.id_number;
-      const time_in = item.time_in;
-      const time_out = item.time_out;
+      // const time_in = item.time_in;
+      // const time_out = item.time_out;
+      const time_in =
+        item.time_in && !isNaN(new Date(item.time_in).valueOf())
+          ? new Intl.DateTimeFormat("en-GB", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+              timeZone: "UTC",
+            }).format(new Date(item.time_in))
+          : "";
+
+      const time_out =
+        item.time_out !== null
+          ? new Intl.DateTimeFormat("en-GB", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+              timeZone: "UTC",
+            }).format(new Date(item.time_out))
+          : "";
 
       const row = [`"${id_num}"`, `"${time_in}"`, `"${time_out}"`].join(",");
 

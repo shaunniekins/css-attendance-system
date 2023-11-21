@@ -11,6 +11,7 @@ interface Item {
   id_number: string;
   time_in: Date;
   time_out: Date;
+  session: number;
 }
 
 const AttendanceComponent = () => {
@@ -22,7 +23,7 @@ const AttendanceComponent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const entriesPerPage = 8;
 
-  const headerNames = ["ID Number", "Time In", "Time Out"];
+  const headerNames = ["ID Number", "Time In", "Time Out", "Session"];
 
   const fetchAttendanceData = async () => {
     try {
@@ -91,9 +92,9 @@ const AttendanceComponent = () => {
             className="w-full border border-purple-600 rounded-full pl-3 py-2"
           />
           <div className="flex items-center gap-x-2 justify-end">
-            <p className="bg-purple-600 rounded-3xl py-3 px-4 text-white">
+            {/* <p className="bg-purple-600 rounded-3xl py-3 px-4 text-white">
               200
-            </p>
+            </p> */}
             <button
               className="border border-purple-600 rounded-3xl py-3 px-4"
               onClick={handleExportCSV}>
@@ -153,6 +154,9 @@ const AttendanceComponent = () => {
                           timeZone: "UTC",
                         }).format(new Date(item.time_out))
                       : ""}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                    {item.session}
                   </td>
                 </tr>
               ))}

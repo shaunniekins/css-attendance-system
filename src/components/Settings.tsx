@@ -5,10 +5,17 @@ import { ArrowLeft, Settings } from "react-feather";
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/app/lib/database.types";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Indicator from "./Indicator";
 import { supabaseAdmin } from "@/utils/supabase";
 import { supabase } from "@/utils/supabase";
+
+import {
+  fetchSettingsListData,
+  updateSettingsAttendanceEnableData,
+  updateSettingsSessionData,
+} from "@/api/settings_data";
+import { updateAttendanceListData } from "@/api/attendance_list_data";
 
 const SettingsComponent = () => {
   const [initialEmail, setInitialEmail] = useState("");
@@ -26,9 +33,10 @@ const SettingsComponent = () => {
   const [indicatorMsg, setIndicatorMsg] = useState("");
   const [indicatorStatus, setIndicatorStatus] = useState(true);
 
-  const router = useRouter();
+  const [isAttendanceEnable, setIsAttendanceEnable] = useState(false);
+  const [session, setSession] = useState(1);
 
-  const supabase2 = createClientComponentClient<Database>();
+  const router = useRouter();
 
   const handleTimeout = () => {
     setTimeout(() => {
@@ -37,22 +45,84 @@ const SettingsComponent = () => {
     }, 2500);
   };
 
+  const fetchUserData = async () => {
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      setInitialEmail(user?.email || "");
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchSettingsData = async () => {
       try {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser();
-        // setCurrentUser(user? || null);
-        setInitialEmail(user?.email || "");
+        const { data, error } = await fetchSettingsListData();
+
+        if (error) {
+          console.error("Error fetching data:", error);
+        } else {
+          console.log("data", data[0].isAttendanceEnable);
+          setIsAttendanceEnable(data[0].isAttendanceEnable);
+          setSession(data[0].session);
+        }
       } catch (error) {
         console.error("Error fetching user:", error);
       }
     };
 
-    fetchData();
+    fetchSettingsData();
+
+    const channel = supabase
+      .channel(`realtime sessions`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "settings" },
+        (payload) => {
+          if (payload.new) {
+            setIsAttendanceEnable(payload.new.isAttendanceEnable);
+            setSession(payload.new.session);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  const memoizedFetchUserData = useMemo(() => fetchUserData, []);
+  // const memoizedFetchSettingsData = useMemo(() => fetchSettingsData, []);
+
+  useEffect(() => {
+    memoizedFetchUserData();
+  }, [memoizedFetchUserData]);
+
+  // useEffect(() => {
+  //   memoizedFetchSettingsData();
+  // }, [memoizedFetchSettingsData]);
+
+  const handleUpdateAttendanceEnable = async (e: {
+    preventDefault: () => void;
+  }) => {
+    e.preventDefault();
+
+    await updateSettingsAttendanceEnableData(!isAttendanceEnable);
+
+    setIsAttendanceEnable(!isAttendanceEnable);
+  };
+
+  const handleUpdateSession = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+
+    await updateSettingsSessionData(session === 1 ? 2 : 1);
+
+    setSession(session === 1 ? 2 : 1);
+  };
 
   const handleNewEmailSubmission = async (e: {
     preventDefault: () => void;
@@ -177,7 +247,7 @@ const SettingsComponent = () => {
         <Indicator msg={indicatorMsg} status={indicatorStatus} />
       )}
 
-      <div className="container mx-auto min-h-[80dvh] w-screen flex flex-col py-5">
+      <div className="container mx-auto min-h-[80dvh] w-screen flex flex-col">
         <div className="z-50 mx-5 my-5 flex justify-between">
           <button
             className="bg-purple-600 rounded-full px-4 py-2 text-white inline-flex items-center"
@@ -353,19 +423,34 @@ const SettingsComponent = () => {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <h1 className="">Enable attendance</h1>
+                <h1 className="">Attendance</h1>
                 <div className="self-end">
                   <button
-                    className="rounded-[10px] bg-purple-500 border  hover:text-white hover:bg-purple-600 px-5 py-2 hover:scale-110 transition delay-75 duration-500 ease-in-out"
-                    onClick={async () => {
-                      // await supabase.auth.signOut();
-                      // router.refresh();
-                      // router.push("/signin");
-                    }}>
-                    Activate
+                    className={`${
+                      !isAttendanceEnable
+                        ? "bg-purple-500 hover:bg-red-600"
+                        : "bg-red-500 hover:bg-purple-600"
+                    } rounded-[10px]  border  hover:text-white  px-5 py-2 hover:scale-110 transition delay-75 duration-500 ease-in-out`}
+                    onClick={handleUpdateAttendanceEnable}>
+                    {isAttendanceEnable ? "Deactivate" : "Activate"}
                   </button>
                 </div>
               </div>
+              {isAttendanceEnable && (
+                <div className="flex justify-between items-center">
+                  <h1 className="flex flex-col">
+                    Session{" "}
+                    <span className="text-sm italic">{`(1: 1st session, 2: 2nd session)`}</span>
+                  </h1>
+                  <div className="self-end">
+                    <button
+                      className={` bg-purple-500 rounded-[10px]  border  hover:text-white  px-5 py-2 hover:scale-110 transition delay-75 duration-500 ease-in-out`}
+                      onClick={handleUpdateSession}>
+                      {session}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

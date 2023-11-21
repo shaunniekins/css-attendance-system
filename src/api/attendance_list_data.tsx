@@ -15,7 +15,7 @@ export const fetchAttendanceListData = async (
     }
 
     const { data, error } = await query
-      // .order("date_last_modified", { ascending: false })
+      .order("last_modified", { ascending: false })
       .range(offset, offset + entriesPerPage - 1);
 
     if (error) {
@@ -48,7 +48,9 @@ export const fetchAttendanceListDataForExport = async (
       query = query.limit(valueLimit);
     }
 
-    const { data, error, count } = await query;
+    const { data, error, count } = await query.order("last_modified", {
+      ascending: false,
+    });
 
     if (error) {
       console.error("Error fetching data:", error);
@@ -64,7 +66,8 @@ export const fetchAttendanceListDataForExport = async (
 
 export const checkAttendanceTimeInListData = async (
   idNumber: string,
-  timeIn: string
+  timeIn: string,
+  session: number
 ) => {
   const date = new Date(timeIn);
   const formattedTimeInStart = `${date.toISOString().slice(0, 10)}T00:00:00Z`;
@@ -76,7 +79,8 @@ export const checkAttendanceTimeInListData = async (
       .select("*")
       .eq("id_number", idNumber)
       .gte("time_in", formattedTimeInStart)
-      .lte("time_in", formattedTimeInEnd);
+      .lte("time_in", formattedTimeInEnd)
+      .eq("session", session);
 
     const { data, error } = await query;
 
@@ -95,7 +99,8 @@ export const checkAttendanceTimeInListData = async (
 
 export const checkAttendanceTimeOutListData = async (
   idNumber: string,
-  timeIn: string
+  timeIn: string,
+  session: number
 ) => {
   const date = new Date(timeIn);
   const formattedTimeInStart = `${date.toISOString().slice(0, 10)}T00:00:00Z`;
@@ -107,7 +112,8 @@ export const checkAttendanceTimeOutListData = async (
       .select("*")
       .eq("id_number", idNumber)
       .gte("time_out", formattedTimeInStart)
-      .lte("time_out", formattedTimeInEnd);
+      .lte("time_out", formattedTimeInEnd)
+      .eq("session", session);
 
     const { data, error } = await query;
 
@@ -147,7 +153,8 @@ export const insertAttendanceListData = async (rowData: Array<any>) => {
 export const updateAttendanceListData = async (
   idNumber: string,
   timeIn: string,
-  updateData: Array<any>
+  updateData: Array<any>,
+  session: number
 ) => {
   const date = new Date(timeIn);
   const formattedTimeInStart = `${date.toISOString().slice(0, 10)}T00:00:00Z`;
@@ -160,6 +167,7 @@ export const updateAttendanceListData = async (
       .eq("id_number", idNumber)
       .gte("time_in", formattedTimeInStart)
       .lte("time_in", formattedTimeInEnd)
+      .eq("session", session)
       .select("*");
 
     if (error) {

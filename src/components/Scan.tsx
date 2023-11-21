@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { QrScanner } from "@yudiel/react-qr-scanner";
 import { Type, Grid, Sunrise, Sunset, Hash } from "react-feather";
@@ -10,6 +10,8 @@ import {
   insertAttendanceListData,
   updateAttendanceListData,
 } from "@/api/attendance_list_data";
+import { fetchSettingsListData } from "@/api/settings_data";
+import { supabase } from "@/utils/supabase";
 
 interface SimpleModalProps {
   isOpen: boolean;
@@ -50,14 +52,14 @@ const SimpleModal: React.FC<SimpleModalProps> = ({
 
         <div className="w-full flex justify-end space-x-3 text-lg">
           <button
-            onClick={handleSend}
-            className="w-full p-2 bg-purple-600 text-white rounded-md">
-            Send
-          </button>
-          <button
             onClick={onClose}
             className="w-full p-2 bg-red-600 text-white rounded-md">
             Close
+          </button>
+          <button
+            onClick={handleSend}
+            className="w-full p-2 bg-purple-600 text-white rounded-md">
+            Submit
           </button>
         </div>
       </div>
@@ -78,6 +80,8 @@ const Scan = () => {
   const [idNumber, setIdNumber] = useState("");
 
   const [messagePrompt, setMessagePrompt] = useState("");
+  const [isAttendanceEnable, setIsAttendanceEnable] = useState(false);
+  const [session, setSession] = useState(1);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
@@ -114,6 +118,7 @@ const Scan = () => {
 
   const handleScanResult = async (idNumber: string) => {
     if (!idNumber) return;
+    if (!isAttendanceEnable) return;
 
     const { localDateTime, localDate } = getLocalDateTimeAndDate();
 
@@ -125,12 +130,14 @@ const Scan = () => {
 
     const { data: existingTimeInData } = await checkAttendanceTimeInListData(
       idNumber,
-      localDate
+      localDate,
+      session
     );
 
     const { data: existingTimeOutData } = await checkAttendanceTimeOutListData(
       idNumber,
-      localDate
+      localDate,
+      session
     );
 
     if (isTimeIn) {
@@ -143,6 +150,7 @@ const Scan = () => {
             id_number: idNumber,
             time_in: localDateTime,
             time_out: null,
+            session: session,
           },
         ];
 
@@ -166,7 +174,8 @@ const Scan = () => {
         await updateAttendanceListData(
           idNumber,
           localDate,
-          updateAttendanceData
+          updateAttendanceData,
+          session
         );
         setMessagePrompt("Successfully Time-Out!");
       } else {
@@ -195,6 +204,50 @@ const Scan = () => {
     //   time_out_datetime
     // );
   };
+
+  useEffect(() => {
+    const fetchSettingsData = async () => {
+      try {
+        const { data, error } = await fetchSettingsListData();
+
+        if (error) {
+          console.error("Error fetching data:", error);
+        } else {
+          console.log("data", data[0].isAttendanceEnable);
+          setIsAttendanceEnable(data[0].isAttendanceEnable);
+          setSession(data[0].session);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchSettingsData();
+
+    const channel = supabase
+      .channel(`realtime sessions`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "settings" },
+        (payload) => {
+          if (payload.new) {
+            setIsAttendanceEnable(payload.new.isAttendanceEnable);
+            setSession(payload.new.session);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // const memoizedFetchSettingsData = useMemo(() => fetchSettingsData, []);
+
+  // useEffect(() => {
+  //   memoizedFetchSettingsData();
+  // }, [memoizedFetchSettingsData]);
 
   useEffect(() => {
     const storedAttendanceOption = localStorage.getItem("attendanceOption");
@@ -284,29 +337,40 @@ const Scan = () => {
             height: "100%",
           }}
         />
-        <div className="container mx-auto z-30 absolute top-5 w-full px-3 flex justify-between">
-          <div className=" z-50 text-white self-center space-x-2 flex">
-            <button
-              className={`${
-                isTimeIn ? "bg-purple-600" : "bg-purple-200"
-              } rounded-full px-2 py-1`}
-              onClick={() => handleAttendanceOptionChange(true)}>
-              <Sunrise />
-            </button>
-            <button
-              className={`${
-                !isTimeIn ? "bg-purple-600" : "bg-purple-200"
-              } rounded-full px-2 py-1`}
-              onClick={() => handleAttendanceOptionChange(false)}>
-              <Sunset />
-            </button>
-          </div>
+        <div
+          className={`${
+            isAttendanceEnable ? "justify-between" : "justify-end"
+          } container mx-auto z-30 absolute top-5 w-full px-3 flex `}>
+          {isAttendanceEnable && (
+            <div className=" z-50 text-white self-center space-x-2 flex">
+              <button
+                className={`${
+                  isTimeIn ? "bg-purple-600" : "bg-purple-200"
+                } rounded-full px-2 py-1`}
+                onClick={() => handleAttendanceOptionChange(true)}>
+                <Sunrise />
+              </button>
+              <button
+                className={`${
+                  !isTimeIn ? "bg-purple-600" : "bg-purple-200"
+                } rounded-full px-2 py-1`}
+                onClick={() => handleAttendanceOptionChange(false)}>
+                <Sunset />
+              </button>
+              <h3 className="bg-purple-600 rounded-full px-3 py-1">
+                {session}
+              </h3>
+            </div>
+          )}
+
           <div className="space-x-2">
-            <button
-              className=" bg-purple-600 text-white rounded-full px-4 py-2"
-              onClick={openModal}>
-              <Hash />
-            </button>
+            {isAttendanceEnable && (
+              <button
+                className=" bg-purple-600 text-white rounded-full px-4 py-2"
+                onClick={() => isAttendanceEnable && openModal()}>
+                <Hash />
+              </button>
+            )}
             <button
               className="bg-purple-600 text-white rounded-full px-4 py-2 text-xs"
               onClick={() => router.push("/attendance")}>
@@ -322,6 +386,16 @@ const Scan = () => {
             </p>
           </div>
         )}
+
+        {!isAttendanceEnable && (
+          <div className="flex flex-col items-center justify-center absolute  w-full h-full top-0 left-0 z-5 text-3xl text-white">
+            <h4 className="flex flex-col text-center">
+              Attendance
+              <span className="font-bold text-red-600">DEACTIVATED!</span>{" "}
+            </h4>
+          </div>
+        )}
+
         <p className="z-50 absolute bottom-3 bg-purple-600 rounded-full px-2 py-1 text-xs">
           Created by <span className=" font-bold">Shaun Niel Ochavo</span>
         </p>
