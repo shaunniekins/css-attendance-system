@@ -236,11 +236,11 @@ const Scan = () => {
   }, [isQRCodeDetected, displayScanResult]);
 
   return (
-    <div className="container mx-auto">
-      <div className="flex justify-center items-center h-[100svh] select-none">
+    <>
+      <div className="flex justify-center items-center h-[100svh] select-none overflow-y-hidden">
         <QrScanner
           viewFinder={(props) => (
-            <div className="flex flex-col items-center justify-center absolute w-[100%] h-[100%] top-0 left-0 z-10">
+            <div className="flex flex-col items-center justify-center absolute w-full h-full top-0 left-0 z-10">
               <svg
                 viewBox="0 0 100 100"
                 className="z-20 w-24 h-24 transform scale-[3]  md:scale-[7]">
@@ -269,47 +269,6 @@ const Scan = () => {
                   strokeWidth="5"
                 />
               </svg>
-              <div className=" z-30 absolute top-5 w-full px-3 flex justify-between">
-                <div className=" z-50 text-white self-center space-x-2 flex">
-                  <button
-                    className={`${
-                      isTimeIn ? "bg-purple-600" : "bg-purple-200"
-                    } rounded-full px-2 py-1`}
-                    onClick={() => handleAttendanceOptionChange(true)}>
-                    <Sunrise />
-                  </button>
-                  <button
-                    className={`${
-                      !isTimeIn ? "bg-purple-600" : "bg-purple-200"
-                    } rounded-full px-2 py-1`}
-                    onClick={() => handleAttendanceOptionChange(false)}>
-                    <Sunset />
-                  </button>
-                </div>
-                <div className="space-x-2">
-                  <button
-                    className=" bg-purple-600 text-white rounded-full px-4 py-2"
-                    onClick={openModal}>
-                    <Hash />
-                  </button>
-                  <button
-                    className="bg-purple-600 text-white rounded-full px-4 py-2 text-xs"
-                    onClick={() => router.push("/attendance")}>
-                    <Grid />
-                  </button>
-                </div>
-              </div>
-              {displayScanResult && (
-                <div className=" z-50 absolute bottom-16 text-center text-white shadow-xl space-y-5">
-                  <p className="text-xs">
-                    <span className="text-sm">{result}</span> <br />
-                    {messagePrompt}
-                  </p>
-                </div>
-              )}
-              <p className="z-50 absolute bottom-3 bg-purple-600 rounded-full px-2 py-1 text-xs">
-                Created by <span className=" font-bold">Shaun Niel Ochavo</span>
-              </p>
             </div>
           )}
           scanDelay={1000}
@@ -317,7 +276,7 @@ const Scan = () => {
           onError={(error) => console.log(error?.message)}
           containerStyle={{
             width: "100%",
-            height: "100vh",
+            height: "100%",
           }}
           videoStyle={{
             objectFit: "cover",
@@ -325,7 +284,49 @@ const Scan = () => {
             height: "100%",
           }}
         />
+        <div className="container mx-auto z-30 absolute top-5 w-full px-3 flex justify-between">
+          <div className=" z-50 text-white self-center space-x-2 flex">
+            <button
+              className={`${
+                isTimeIn ? "bg-purple-600" : "bg-purple-200"
+              } rounded-full px-2 py-1`}
+              onClick={() => handleAttendanceOptionChange(true)}>
+              <Sunrise />
+            </button>
+            <button
+              className={`${
+                !isTimeIn ? "bg-purple-600" : "bg-purple-200"
+              } rounded-full px-2 py-1`}
+              onClick={() => handleAttendanceOptionChange(false)}>
+              <Sunset />
+            </button>
+          </div>
+          <div className="space-x-2">
+            <button
+              className=" bg-purple-600 text-white rounded-full px-4 py-2"
+              onClick={openModal}>
+              <Hash />
+            </button>
+            <button
+              className="bg-purple-600 text-white rounded-full px-4 py-2 text-xs"
+              onClick={() => router.push("/attendance")}>
+              <Grid />
+            </button>
+          </div>
+        </div>
+        {displayScanResult && (
+          <div className=" z-50 absolute bottom-16 text-center text-white shadow-xl space-y-5">
+            <p className="text-xs">
+              <span className="text-sm">{result}</span> <br />
+              {messagePrompt}
+            </p>
+          </div>
+        )}
+        <p className="z-50 absolute bottom-3 bg-purple-600 rounded-full px-2 py-1 text-xs">
+          Created by <span className=" font-bold">Shaun Niel Ochavo</span>
+        </p>
       </div>
+
       <SimpleModal
         isOpen={isModalOpen}
         onClose={closeModal}
@@ -334,7 +335,7 @@ const Scan = () => {
         setIdNumber={setIdNumber}
         handleScanResult={handleScanResult}
       />
-    </div>
+    </>
   );
 };
 

@@ -332,7 +332,7 @@ const SettingsComponent = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col space-y-5">
+          <div className="flex flex-col space-y-5 pb-5">
             <div>
               <h1 className="font-semibold text-lg">Settings</h1>
               <div className="w-full px-5 border border-purple-600" />
