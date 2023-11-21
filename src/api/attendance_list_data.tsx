@@ -31,6 +31,37 @@ export const fetchAttendanceListData = async (
   }
 };
 
+export const fetchAttendanceListDataForExport = async (
+  valueLimit: number,
+  start: number,
+  end: number
+) => {
+  try {
+    let query = supabase
+      .from("attendance_list")
+      .select(`id_number,time_in, time_out`, { count: "exact" });
+
+    if (start && end) {
+      query = query.range(start, end);
+    }
+    if (valueLimit) {
+      query = query.limit(valueLimit);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("Error fetching data:", error);
+      return { data: [], error };
+    } else {
+      return { data, count, error: null };
+    }
+  } catch (error) {
+    console.error("An error occurred:", error);
+    return { data: [], error };
+  }
+};
+
 export const checkAttendanceTimeInListData = async (
   idNumber: string,
   timeIn: string

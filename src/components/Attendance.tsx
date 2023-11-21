@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Settings } from "react-feather";
 
 import { fetchAttendanceListData } from "@/api/attendance_list_data";
+import { handleExportCSV } from "@/utils/exportCsv";
 
 interface Item {
   id_number: string;
@@ -81,13 +82,26 @@ const AttendanceComponent = () => {
         </button>
       </div>
       <div className="px-5 w-full flex flex-col space-y-8">
-        <input
-          type="text"
-          value={idNumber}
-          onChange={handleIdNumberChange}
-          placeholder="Search ID"
-          className="w-full border border-purple-600 rounded-full pl-3 py-2"
-        />
+        <div className="w-full flex justify-between gap-x-2 select-none">
+          <input
+            type="text"
+            value={idNumber}
+            onChange={handleIdNumberChange}
+            placeholder="Search ID"
+            className="w-full border border-purple-600 rounded-full pl-3 py-2"
+          />
+          <div className="flex items-center gap-x-2 justify-end">
+            <p className="bg-purple-600 rounded-3xl py-3 px-4 text-white">
+              200
+            </p>
+            <button
+              className="border border-purple-600 rounded-3xl py-3 px-4"
+              onClick={handleExportCSV}>
+              ▼
+            </button>
+          </div>
+        </div>
+
         <div className="w-full overflow-x-auto rounded-t-3xl h-[70dvh]">
           <table className="w-full text-sm text-center">
             <thead className="text-xs uppercase bg-purple-600 text-white">
@@ -106,7 +120,7 @@ const AttendanceComponent = () => {
               {attendanceData.map((item: Item, index) => (
                 <tr
                   key={index}
-                  className="bg-white border-b border-green-700 hover:bg-green-300">
+                  className="bg-white border-b border-purple-700 hover:bg-purple-300">
                   <th
                     scope="row"
                     className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap font-mono">
