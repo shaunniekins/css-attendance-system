@@ -81,7 +81,7 @@ const Scan = () => {
 
   const [messagePrompt, setMessagePrompt] = useState("");
   const [isAttendanceEnable, setIsAttendanceEnable] = useState(false);
-  const [session, setSession] = useState(1);
+  const [session, setSession] = useState(2);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
