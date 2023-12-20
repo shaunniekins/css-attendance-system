@@ -2,13 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Settings } from "react-feather";
-
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/app/lib/database.types";
 import { useEffect, useMemo, useState } from "react";
 import Indicator from "./Indicator";
-import { supabaseAdmin } from "@/utils/supabase";
-import { supabase } from "@/utils/supabase";
+// import { supabaseAdmin } from "@/utils/supabase";
+import { supabase, supabaseAdmin } from "@/utils/supabase";
 
 import {
   fetchSettingsListData,
@@ -50,7 +47,7 @@ const SettingsComponent = () => {
       const {
         data: { user },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabaseAdmin.auth.getUser();
       setInitialEmail(user?.email || "");
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -65,7 +62,6 @@ const SettingsComponent = () => {
         if (error) {
           console.error("Error fetching data:", error);
         } else {
-          console.log("data", data[0].isAttendanceEnable);
           setIsAttendanceEnable(data[0].isAttendanceEnable);
           setSession(data[0].session);
         }
@@ -140,7 +136,6 @@ const SettingsComponent = () => {
         setIndicatorStatus(false);
         handleTimeout();
       } else {
-        // console.log("Email updated successfully");
         setIndicatorMsg("Check email for confirmation of change.");
         setIndicatorStatus(true);
         handleTimeout();
@@ -149,7 +144,6 @@ const SettingsComponent = () => {
         // setCreatePassword("");
 
         await supabase.auth.signOut();
-        router.refresh();
         router.push("/signin");
       }
     } catch (error) {
@@ -180,7 +174,6 @@ const SettingsComponent = () => {
         setIndicatorStatus(false);
         handleTimeout();
       } else {
-        // console.log("Account created successfully.");
         setIndicatorMsg("Account created successfully.");
         setIndicatorStatus(true);
         handleTimeout();
@@ -234,7 +227,6 @@ const SettingsComponent = () => {
         handleTimeout();
       }
     } else {
-      // console.log("Passwords do not match.");
       setIndicatorMsg("Passwords do not match.");
       setIndicatorStatus(false);
       handleTimeout();
@@ -413,9 +405,8 @@ const SettingsComponent = () => {
                 <div className="self-end">
                   <button
                     className="rounded-[10px] bg-red-500 border  hover:text-white hover:bg-red-600 px-5 py-2 hover:scale-110 transition delay-75 duration-500 ease-in-out"
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      router.refresh();
+                    onClick={() => {
+                      supabase.auth.signOut();
                       router.push("/signin");
                     }}>
                     Logout

@@ -1,15 +1,10 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-
 import Scan from "@/components/Scan";
-import { getSession } from "@/context/auth";
+import Protected from "@/utils/Protected";
 
 export default async function Home() {
-  try {
-    await getSession(cookies);
-  } catch (error) {
-    return redirect("/signin");
-  }
-
-  return <Scan />;
+  return (
+    <Protected>
+      <Scan />
+    </Protected>
+  );
 }

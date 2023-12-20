@@ -3,25 +3,18 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { redirect } from "next/navigation";
-
 import { supabase } from "@/utils/supabase";
-import { NextRequest, NextResponse } from "next/server";
-
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { createServerClient } from "@supabase/ssr";
-import { Database } from "@/app/lib/database.types";
 import Indicator from "./Indicator";
+import { MutatingDots } from "react-loader-spinner";
 
 const SigninComponent = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [indicatorMsg, setIndicatorMsg] = useState("");
   const [indicatorStatus, setIndicatorStatus] = useState(true);
-
-  const supabase2 = createClientComponentClient<Database>();
 
   const handleTimeout = () => {
     setTimeout(() => {
@@ -33,13 +26,8 @@ const SigninComponent = () => {
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    // console.log("email", email);
-    // console.log("pass", password);
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        // email: "shaunniel02@gmail.com",
-        // password: "Xv#6nT@YLevL3p#",
         email: email,
         password: password,
       });
@@ -51,8 +39,7 @@ const SigninComponent = () => {
       } else {
         setEmail("");
         setPassword("");
-        await supabase.auth.setSession(data.session);
-        router.refresh();
+        setLoading(true);
         router.push("/");
       }
     } catch (error) {
@@ -64,6 +51,23 @@ const SigninComponent = () => {
     <>
       {indicatorMsg && (
         <Indicator msg={indicatorMsg} status={indicatorStatus} />
+      )}
+
+      {loading && (
+        <div
+          className={`z-50 fixed inset-0 flex items-center justify-center bg-opacity-50 bg-black overflow-y-auto`}>
+          <MutatingDots
+            height="100"
+            width="100"
+            color="#8667F2"
+            secondaryColor="#E0E7FF"
+            radius="12.5"
+            ariaLabel="mutating-dots-loading"
+            wrapperStyle={{}}
+            wrapperClass=""
+            visible={true}
+          />
+        </div>
       )}
       <div className="min-h-[100dvh] flex items-center justify-center bg-purple-100 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 ">

@@ -8,7 +8,6 @@ export const fetchSettingsListData = async () => {
       console.error("Error fetching data:", error);
       return { data: [], error };
     } else {
-      //   console.log("Data:", data);
       return { data, error: null };
     }
   } catch (error) {
@@ -31,7 +30,6 @@ export const updateSettingsAttendanceEnableData = async (
       console.error("Error updating data:", error);
       return { data: null, error };
     } else {
-      // console.log("Successfully updated data:", data);
       return { data, error: null };
     }
   } catch (error) {
@@ -52,7 +50,6 @@ export const updateSettingsSessionData = async (session: number) => {
       console.error("Error updating data:", error);
       return { data: null, error };
     } else {
-      // console.log("Successfully updated data:", data);
       return { data, error: null };
     }
   } catch (error) {

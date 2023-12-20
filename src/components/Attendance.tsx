@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Settings } from "react-feather";
 
 import { fetchAttendanceListData } from "@/api/attendance_list_data";
 import { handleExportCSV } from "@/utils/exportCsv";
+import { supabase } from "@/utils/supabase";
 
 interface Item {
   id_number: string;
@@ -17,7 +18,7 @@ interface Item {
 const AttendanceComponent = () => {
   const router = useRouter();
   const [idNumber, setIdNumber] = useState("");
-  const [attendanceData, setAttendanceDate] = useState([]);
+  const [attendanceData, setAttendanceData] = useState<Item[]>([]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,33 +26,66 @@ const AttendanceComponent = () => {
 
   const headerNames = ["ID Number", "Time In", "Time Out", "Session"];
 
-  const fetchAttendanceData = async () => {
+  const memoizedFetchAttendanceListData = useCallback(async () => {
     try {
       const { data, error } = await fetchAttendanceListData(
         entriesPerPage,
         currentPage,
         idNumber
       );
-      if (error) {
-        console.error("Error fetching data:", error);
-      } else {
-        setAttendanceDate(data as never[]);
-      }
+      setAttendanceData(data as never[]);
+      // console.log("data", data);
     } catch (error) {
       console.error("An error occurred:", error);
     }
-  };
-
-  // Memoize the data-fetching functions
-  const memoizedFetchAttendanceData = useMemo(
-    () => fetchAttendanceData,
-    [entriesPerPage, currentPage, idNumber]
-  );
+  }, [entriesPerPage, currentPage, idNumber]);
 
   useEffect(() => {
-    // Call the memoized fetchData function when inputs change
-    memoizedFetchAttendanceData();
-  }, [memoizedFetchAttendanceData]);
+    memoizedFetchAttendanceListData();
+
+    const channel = supabase
+      .channel("realtime messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "attendance_list" },
+        (payload) => {
+          setAttendanceData((prev) => [...prev, payload.new as Item]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, idNumber, memoizedFetchAttendanceListData]);
+
+  // const fetchAttendanceData = async () => {
+  //   try {
+  //     const { data, error } = await fetchAttendanceListData(
+  //       entriesPerPage,
+  //       currentPage,
+  //       idNumber
+  //     );
+  //     if (error) {
+  //       console.error("Error fetching data:", error);
+  //     } else {
+  //       setAttendanceData(data as never[]);
+  //     }
+  //   } catch (error) {
+  //     console.error("An error occurred:", error);
+  //   }
+  // };
+
+  // // Memoize the data-fetching functions
+  // const memoizedFetchAttendanceData = useMemo(
+  //   () => fetchAttendanceData,
+  //   [entriesPerPage, currentPage, idNumber]
+  // );
+
+  // useEffect(() => {
+  //   // Call the memoized fetchData function when inputs change
+  //   memoizedFetchAttendanceData();
+  // }, [memoizedFetchAttendanceData]);
 
   const handleIdNumberChange = (e: any) => {
     const inputValue = e.target.value;

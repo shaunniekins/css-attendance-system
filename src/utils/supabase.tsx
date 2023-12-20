@@ -1,19 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
-import { createServerClient, createBrowserClient } from "@supabase/ssr";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabaseServiceRoleKey =
-  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseAdminKey =
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-  cookies: {},
-});
+if (!supabaseUrl || !supabaseAnonKey) throw new Error("Supabase Problem!");
 
-export const supabaseAdmin = createBrowserClient(
-  supabaseUrl,
-  supabaseServiceRoleKey,
-  {
-    cookies: {},
-  }
-);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabaseAdmin = createClient(supabaseUrl, supabaseAdminKey);

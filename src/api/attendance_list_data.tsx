@@ -22,7 +22,6 @@ export const fetchAttendanceListData = async (
       console.error("Error fetching data:", error);
       return { data: [], error };
     } else {
-      //   console.log("Data:", data);
       return { data, error: null };
     }
   } catch (error) {
@@ -88,7 +87,6 @@ export const checkAttendanceTimeInListData = async (
       console.error("Error fetching data:", error);
       return { data: [], error };
     } else {
-      //   console.log("Data:", data);
       return { data, error: null };
     }
   } catch (error) {
@@ -121,7 +119,6 @@ export const checkAttendanceTimeOutListData = async (
       console.error("Error fetching data:", error);
       return { data: [], error };
     } else {
-      //   console.log("Data:", data);
       return { data, error: null };
     }
   } catch (error) {
@@ -141,7 +138,6 @@ export const insertAttendanceListData = async (rowData: Array<any>) => {
       console.error("Error inserting data:", error);
       return { data: null, error };
     } else {
-      // console.log("Successfully inserted data:", data);
       return { data, error: null };
     }
   } catch (error) {
@@ -174,7 +170,6 @@ export const updateAttendanceListData = async (
       console.error("Error updating data:", error);
       return { data: null, error };
     } else {
-      // console.log("Successfully updated data:", data);
       return { data, error: null };
     }
   } catch (error) {

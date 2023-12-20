@@ -1,14 +1,10 @@
 import AttendanceComponent from "@/components/Attendance";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { getSession } from "@/context/auth";
+import Protected from "@/utils/Protected";
 
 export default async function Attendance() {
-  try {
-    await getSession(cookies);
-  } catch (error) {
-    return redirect("/signin");
-  }
-
-  return <AttendanceComponent />;
+  return (
+    <Protected>
+      <AttendanceComponent />
+    </Protected>
+  );
 }

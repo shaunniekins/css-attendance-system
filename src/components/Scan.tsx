@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { QrScanner } from "@yudiel/react-qr-scanner";
 import { Type, Grid, Sunrise, Sunset, Hash } from "react-feather";
@@ -143,7 +143,6 @@ const Scan = () => {
     if (isTimeIn) {
       if (existingTimeInData.length > 0) {
         setMessagePrompt("Already Timed-In!");
-        // console.log(idNumber, "already checked in!");
       } else {
         const newAttendanceData = [
           {
@@ -160,7 +159,6 @@ const Scan = () => {
     } else {
       if (existingTimeOutData.length > 0) {
         setMessagePrompt("Already Timed-Out!");
-        // console.log(idNumber, "already checked out!");
       } else if (
         existingTimeInData.length > 0 &&
         existingTimeOutData.length === 0
@@ -186,7 +184,6 @@ const Scan = () => {
 
     // // Check if 'attendance_data' exists in localStorage
     // const existingData = localStorage.getItem("attendance_data");
-    // console.log("existingData", existingData);
     // if (existingData) {
     //   // If it exists, parse the data, append the new data, and update the localStorage
     //   const parsedData = JSON.parse(existingData);
@@ -197,39 +194,29 @@ const Scan = () => {
     //   const initialData = [{ data, time_in_datetime, time_out_datetime }];
     //   localStorage.setItem("attendance_data", JSON.stringify(initialData));
     // }
-    // console.log(
-    //   "Data stored in localStorage:",
-    //   data,
-    //   time_in_datetime,
-    //   time_out_datetime
-    // );
   };
 
+  const memoizedFetchSettingsData = useCallback(async () => {
+    try {
+      const { data, error } = await fetchSettingsListData();
+      setIsAttendanceEnable(data[0].isAttendanceEnable);
+      // setSession(data[0].session);
+      // console.log("data", data[0]);
+    } catch (error) {
+      console.error("An error occurred:", error);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchSettingsData = async () => {
-      try {
-        const { data, error } = await fetchSettingsListData();
-
-        if (error) {
-          console.error("Error fetching data:", error);
-        } else {
-          console.log("data", data[0].isAttendanceEnable);
-          setIsAttendanceEnable(data[0].isAttendanceEnable);
-          setSession(data[0].session);
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-
-    fetchSettingsData();
+    memoizedFetchSettingsData();
 
     const channel = supabase
-      .channel(`realtime sessions`)
+      .channel("realtime settings")
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "settings" },
         (payload) => {
+          console.log("payload", payload);
           if (payload.new) {
             setIsAttendanceEnable(payload.new.isAttendanceEnable);
             setSession(payload.new.session);
@@ -241,7 +228,44 @@ const Scan = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [memoizedFetchSettingsData]);
+
+  // useEffect(() => {
+  //   const fetchSettingsData = async () => {
+  //     try {
+  //       const { data, error } = await fetchSettingsListData();
+
+  //       if (error) {
+  //         console.error("Error fetching data:", error);
+  //       } else {
+  //         setIsAttendanceEnable(data[0].isAttendanceEnable);
+  //         setSession(data[0].session);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching user:", error);
+  //     }
+  //   };
+
+  //   fetchSettingsData();
+
+  //   const channel = supabase
+  //     .channel(`realtime sessions`)
+  //     .on(
+  //       "postgres_changes",
+  //       { event: "UPDATE", schema: "public", table: "settings" },
+  //       (payload) => {
+  //         if (payload.new) {
+  //           setIsAttendanceEnable(payload.new.isAttendanceEnable);
+  //           setSession(payload.new.session);
+  //         }
+  //       }
+  //     )
+  //     .subscribe();
+
+  //   return () => {
+  //     supabase.removeChannel(channel);
+  //   };
+  // }, []);
 
   // const memoizedFetchSettingsData = useMemo(() => fetchSettingsData, []);
 
@@ -252,15 +276,14 @@ const Scan = () => {
   useEffect(() => {
     const storedAttendanceOption = localStorage.getItem("attendanceOption");
 
-    // console.log("storedAttendanceOption1 ", storedAttendanceOption);
     setIsTimeIn(
       storedAttendanceOption ? storedAttendanceOption === "true" : true
     );
   }, []);
 
-  const handleAttendanceOptionChange = (value: boolean) => {
-    // console.log("truth value: ", value);
-    setIsTimeIn(value);
+  const handleAttendanceOptionChange = () => {
+    setIsTimeIn(!isTimeIn);
+    const value = !isTimeIn;
     localStorage.setItem("attendanceOption", JSON.stringify(value));
   };
 
@@ -344,6 +367,12 @@ const Scan = () => {
           {isAttendanceEnable && (
             <div className=" z-50 text-white self-center space-x-2 flex">
               <button
+                className={`
+                  bg-purple-600 rounded-full px-2 py-1`}
+                onClick={handleAttendanceOptionChange}>
+                {isTimeIn ? "IN" : "OUT"}
+              </button>
+              {/* <button
                 className={`${
                   isTimeIn ? "bg-purple-600" : "bg-purple-200"
                 } rounded-full px-2 py-1`}
@@ -356,9 +385,9 @@ const Scan = () => {
                 } rounded-full px-2 py-1`}
                 onClick={() => handleAttendanceOptionChange(false)}>
                 <Sunset />
-              </button>
+              </button> */}
               <h3 className="bg-purple-600 rounded-full px-3 py-1">
-                {session}
+                {session === 1 ? "AM" : "PM"}
               </h3>
             </div>
           )}
