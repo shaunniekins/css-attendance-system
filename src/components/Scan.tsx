@@ -81,7 +81,7 @@ const Scan = () => {
 
   const [messagePrompt, setMessagePrompt] = useState("");
   const [isAttendanceEnable, setIsAttendanceEnable] = useState(false);
-  const [session, setSession] = useState(2);
+  const [session, setSession] = useState(1);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value;
@@ -200,7 +200,7 @@ const Scan = () => {
     try {
       const { data, error } = await fetchSettingsListData();
       setIsAttendanceEnable(data[0].isAttendanceEnable);
-      // setSession(data[0].session);
+      setSession(data[0].session);
       // console.log("data", data[0]);
     } catch (error) {
       console.error("An error occurred:", error);
